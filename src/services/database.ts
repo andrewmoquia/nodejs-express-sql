@@ -1,4 +1,3 @@
-import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 export class Database {
@@ -9,9 +8,6 @@ export class Database {
    }
 
    public connect() {
-      //
-      //Loads environment variables from a ".env" file into "process.env".
-      dotenv.config();
       //
       //IIFE =  a JavaScript function that runs as soon as it is defined.
       (async () => {
