@@ -1,26 +1,20 @@
-import mongoose from 'mongoose';
+import mysql from 'mysql';
 
-export class Database {
-   private mongoURI;
-
-   constructor() {
-      this.mongoURI = process.env.MONGO_URI;
-   }
+class Database {
+   public nodemysql = mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: '',
+      database: 'nodejs-sql',
+   });
 
    public connect() {
-      //
-      //IIFE =  a JavaScript function that runs as soon as it is defined.
-      (async () => {
-         try {
-            const db = await mongoose.connect(`${this.mongoURI}`);
-            return db
-               ? console.log(`Database '${db.connection.name}' is connected.`)
-               : console.log('Failed to connect.'); //TO-DO: Handle error try to reconnect
-         } catch (err) {
-            //
-            //TO-DO: Handle error try to reconnect
-            return console.log('Failed to connect.');
-         }
-      })();
+      this.nodemysql.connect((err) => {
+         err
+            ? console.log('MySQL connection failed.', { ...err })
+            : console.log('MySQL connection success.');
+      });
    }
 }
+
+export const db = new Database();
