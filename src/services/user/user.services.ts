@@ -1,18 +1,26 @@
 import { RequestHandler, Router } from 'express';
-import { db } from './database';
+import { db } from '../database';
 import bcryptjs from 'bcryptjs';
+import { UserRespond } from './user.respond';
+import { v4 as uuidv4 } from 'uuid';
 
 export class User {
+   private send;
+
+   constructor() {
+      this.send = new UserRespond();
+   }
+
    public router = Router();
 
    public hashPassword = async (password: string) => {
+      //Random string. The same password will no longer yield the same hash.
       const salt = await bcryptjs.genSalt(12);
-      if (!salt) return null;
 
+      //Take a plain text password and putting it through a hash algorithm.
       const hash = await bcryptjs.hash(password, salt);
-      if (!hash) return null;
 
-      return hash && hash;
+      return !salt || !hash ? null : hash;
    };
 
    public deleteUser: RequestHandler = (req, res) => {
@@ -20,16 +28,14 @@ export class User {
          const { id } = req.params;
 
          //Delete user from the database.
-         const sql = `DELETE FROM user WHERE user_id = ${id}`;
-         db.nodemysql.query(sql, (err) => {
-            err
-               ? res.send({ message: 'Failed to delete user. Try again later.', err })
-               : res.send({ message: 'Success deleting user.' });
+         const query = 'DELETE FROM user WHERE user_id = ?';
+         db.nodemysql.query(query, [id], (err, result) => {
+            err ? this.send.failedDelete(res, err) : this.send.successDelete(res, result);
          });
 
          //Throw error
-      } catch (error) {
-         res.send({ message: 'Failed to delete user. Try again later.', error });
+      } catch (err) {
+         this.send.failedDelete(res, err);
       }
    };
 
@@ -38,16 +44,18 @@ export class User {
          const { id, username } = req.body;
 
          //Update user info in the database.
-         const sql = `UPDATE user SET username = '${username}' WHERE user_id = '${id}'`;
-         db.nodemysql.query(sql, (err, result) => {
-            err
-               ? res.send({ message: 'Failed to update user. Try again later.', err })
-               : res.send({ result });
+         const sql = `UPDATE user SET username = ? WHERE user_id = ?`;
+         db.nodemysql.query(sql, [username, id], (err, result) => {
+            err ? this.send.failedUpdate(res, err) : this.send.successUpdate(res, result);
          });
 
          //Throw error
       } catch (error) {
-         res.send({ message: 'Failed to update user. Try again later.', error });
+         res.status(200).json({
+            status: 400,
+            message: 'Failed to update user. Try again later.',
+            error,
+         });
       }
    };
 
@@ -78,7 +86,7 @@ export class User {
          if (!secure_pw) res.send({ message: 'Failed to create account. Try again later.' });
 
          const user = {
-            user_id: Math.random() * 1000,
+            user_id: uuidv4(),
             username,
             password: secure_pw,
          };
