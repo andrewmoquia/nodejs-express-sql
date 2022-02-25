@@ -1,4 +1,4 @@
-import { User } from '../services/user.services';
+import { User } from '../services/user/user.services';
 
 export class UserController extends User {
    public routes() {
@@ -13,6 +13,8 @@ export class UserController extends User {
 
       //Route for deleting one user.
       this.router.delete('/delete/user/:id', this.deleteUser);
+
+      //Return router.
       return this.router;
    }
 }
